@@ -2,6 +2,7 @@
 Robot controller definition
 Complete controller including SLAM, planning, path following
 """
+
 import numpy as np
 
 from place_bot.entities.robot_abstract import RobotAbstract
@@ -10,7 +11,10 @@ from place_bot.entities.lidar import LidarParams
 
 from tiny_slam import TinySlam
 
-from control import potential_field_control, reactive_obst_avoid
+from control import (
+    potential_field_control,
+    reactive_obst_avoid,
+)  # We import the control functions we need
 from occupancy_grid import OccupancyGrid
 from planner import Planner
 
@@ -19,13 +23,17 @@ from planner import Planner
 class MyRobotSlam(RobotAbstract):
     """A robot controller including SLAM, path planning and path following"""
 
-    def __init__(self,
-                 lidar_params: LidarParams = LidarParams(),
-                 odometer_params: OdometerParams = OdometerParams()):
+    def __init__(
+        self,
+        lidar_params: LidarParams = LidarParams(),
+        odometer_params: OdometerParams = OdometerParams(),
+    ):
         # Passing parameter to parent class
-        super().__init__(should_display_lidar=False,
-                         lidar_params=lidar_params,
-                         odometer_params=odometer_params)
+        super().__init__(
+            should_display_lidar=False,
+            lidar_params=lidar_params,
+            odometer_params=odometer_params,
+        )
 
         # step counter to deal with init and display
         self.counter = 0
@@ -35,11 +43,13 @@ class MyRobotSlam(RobotAbstract):
         # robot's starting position and the maximum map size that we shouldn't know.
         size_area = (1400, 1000)
         robot_position = (439.0, 195)
-        self.occupancy_grid = OccupancyGrid(x_min=-(size_area[0] / 2 + robot_position[0]),
-                                            x_max=size_area[0] / 2 - robot_position[0],
-                                            y_min=-(size_area[1] / 2 + robot_position[1]),
-                                            y_max=size_area[1] / 2 - robot_position[1],
-                                            resolution=2)
+        self.occupancy_grid = OccupancyGrid(
+            x_min=-(size_area[0] / 2 + robot_position[0]),
+            x_max=size_area[0] / 2 - robot_position[0],
+            y_min=-(size_area[1] / 2 + robot_position[1]),
+            y_max=size_area[1] / 2 - robot_position[1],
+            resolution=2,
+        )
 
         self.tiny_slam = TinySlam(self.occupancy_grid)
         self.planner = Planner(self.occupancy_grid)
@@ -51,17 +61,20 @@ class MyRobotSlam(RobotAbstract):
         """
         Main control function executed at each time step
         """
-        return self.control_tp1()
+        return self.control_tp1()  # We choose wich control function we want to use
 
     def control_tp1(self):
         """
         Control function for TP1
         Control funtion with minimal random motion
         """
-        self.tiny_slam.compute()
+        # self.tiny_slam.compute()  # TODO : enlever ?
 
         # Compute new command speed to perform obstacle avoidance
-        command = reactive_obst_avoid(self.lidar())
+        command, new_counter = reactive_obst_avoid(
+            self.lidar(), self.counter
+        )  # We want to avoid obstacles (here defined by the lidar)
+        self.counter = new_counter
         return command
 
     def control_tp2(self):
@@ -70,7 +83,7 @@ class MyRobotSlam(RobotAbstract):
         Main control function with full SLAM, random exploration and path planning
         """
         pose = self.odometer_values()
-        goal = [0,0,0]
+        goal = [0, 0, 0]
 
         # Compute new command speed to perform obstacle avoidance
         command = potential_field_control(self.lidar(), pose, goal)

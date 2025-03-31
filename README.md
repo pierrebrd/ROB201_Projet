@@ -17,3 +17,6 @@ At the end of the course, you will have to submit your solution to your teacher 
 
 If you have questions about the code, in particular the use of *Place-Bot* you can contact: emmanuel . battesti at ensta-paris . fr
 
+# Notes perso
+
+J'ai décidé d'installer l'environnement avec Conda, mais certains packages ont été installés avec pip (place-bot et ses dépendances). Ce n'est donc pas très propre. J'utilise python 3.11, je crois que ça marche. Au besoin je me dirigerais vers python 3.10 ou moins. 
