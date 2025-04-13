@@ -69,14 +69,14 @@ def potential_field_control(lidar, current_pose, goal_pose):
     """
 
     # Parameters (TODO: put them in the control_tp2 function)
-    K_goal = 0.2
-    K_obs = -1000
+    K_goal = 2
+    K_obs = -10000
     K_omega = 0.1
-    K_V = 1
-    phi_max = np.pi / 3
+    K_V = 0.1
+    phi_max = np.pi / 6
     d_seuil = 5
     d_quadratic = 100  # under this distance, we use a quadratic field to slow the robot
-    d_safe = 20
+    d_safe = 100
 
     d_q_qgoal = np.sqrt(
         (current_pose[0] - goal_pose[0]) ** 2 + (current_pose[1] - goal_pose[1]) ** 2
@@ -121,7 +121,13 @@ def potential_field_control(lidar, current_pose, goal_pose):
 
     # Angle between the gradient and the current direction:
     gradient_angle = np.arctan2(final_gradient[1], final_gradient[0])
+    print(f"final gradient: {final_gradient}")
+    print(f"gradient angle: {gradient_angle}")
     phi_r = gradient_angle - current_pose[2]
+    # Ensure the angle is in [-pi, pi]
+    phi_r = (phi_r + np.pi) % (2 * np.pi) - np.pi
+    print("current_robot_angle:", current_pose[2])
+    print("phi_r:", phi_r)
     command_rotation = K_omega * phi_r
 
     # Forward command:

@@ -33,3 +33,7 @@ TODO : metrre les paramètres dans la fonction de `my_robot_slam.py` plutot que 
 
 
 j'ai l'impression que c'et bugué genre le robot vas dans la direction opposée et fait pas un 360 quand le k_omega ets trop faible
+update :j'avais oublié de remttre un angle dans l'intervall -pi pi
+okay la c'est bon ! ça marche bien !
+
+je nai pas fait la partie facultative
