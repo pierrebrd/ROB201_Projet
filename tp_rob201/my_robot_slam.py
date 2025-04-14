@@ -61,6 +61,14 @@ class MyRobotSlam(RobotAbstract):
         """
         Main control function executed at each time step
         """
+        # Update the lidar map
+        self.tiny_slam.update_map(self.lidar(), self.odometer_values())
+
+        if self.counter % 10 == 0:
+            self.tiny_slam.grid.display_plt(self.odometer_values())
+            self.counter = 0
+        self.counter += 1
+
         return self.control_tp2()  # We choose wich control function we want to use
 
     def control_tp1(self):
@@ -84,7 +92,7 @@ class MyRobotSlam(RobotAbstract):
         """
         pose = self.odometer_values()
         goal = [-400, -20, 0]
-        print(pose)
+        # print(pose)
 
         # Compute new command speed to perform obstacle avoidance
         command = potential_field_control(self.lidar(), pose, goal)

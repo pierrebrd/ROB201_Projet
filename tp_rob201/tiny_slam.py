@@ -1,4 +1,4 @@
-""" A simple robotics navigation code including SLAM, exploration, planning"""
+"""A simple robotics navigation code including SLAM, exploration, planning"""
 
 import cv2
 import numpy as np
@@ -12,6 +12,7 @@ class TinySlam:
         self.grid = occupancy_grid
 
         # Origin of the odom frame in the map frame
+        # At the beginning, the odom frame is the map frame
         self.odom_pose_ref = np.array([0, 0, 0])
 
     def _score(self, lidar, pose):
@@ -59,8 +60,38 @@ class TinySlam:
         """
         # TODO for TP3
 
+        # First step
+        # Get the lidar data and convert them to cartesian coordinates in the world frame
+        lidarDist = lidar.get_sensor_values()
+        lidarAngles = lidar.get_ray_angles()
+        x0, y0, theta0 = pose
+
+        # Slow version!
+        # lidarCartesian = np.zeros((len(lidarDist), 2))
+        # for i in range(len(lidarDist)):
+        #     di = lidarDist[i]
+        #     thetai = lidarAngles[i]
+        #     x = x0 + di * np.cos(thetai + theta0)
+        #     y = y0 + di * np.sin(theta0 + thetai)
+
+        x = x0 + lidarDist * np.cos(lidarAngles + theta0)
+        y = y0 + lidarDist * np.sin(lidarAngles + theta0)
+
+        # Second step
+        # Update the map for each point detected by the lidar
+        #   First part: entire line, low probability
+
+        for i in range(len(x)):
+            self.grid.add_value_along_line(x0, y0, x[i], y[i], -1)
+        #   Second part: detected cell, high probability
+        self.grid.add_map_points(x, y, 2)
+
+        # Third step
+        # Threshold probabilities to avoid divergence
+        np.clip(self.grid.occupancy_map, -40, 40)
+
     def compute(self):
-        """ Useless function, just for the exercise on using the profiler """
+        """Useless function, just for the exercise on using the profiler"""
         # Remove after TP1
 
         ranges = np.random.rand(3600)

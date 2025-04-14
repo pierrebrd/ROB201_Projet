@@ -114,20 +114,20 @@ def potential_field_control(lidar, current_pose, goal_pose):
             * (qobs - current_pose[:2])
         )
 
-    print(f"attraction:{attraction_gradient}, repulsion:{repulsion_gradient}")
+    # print(f"attraction:{attraction_gradient}, repulsion:{repulsion_gradient}")
 
     final_gradient = attraction_gradient + repulsion_gradient
     # Now we create the command
 
     # Angle between the gradient and the current direction:
     gradient_angle = np.arctan2(final_gradient[1], final_gradient[0])
-    print(f"final gradient: {final_gradient}")
-    print(f"gradient angle: {gradient_angle}")
+    # print(f"final gradient: {final_gradient}")
+    # print(f"gradient angle: {gradient_angle}")
     phi_r = gradient_angle - current_pose[2]
     # Ensure the angle is in [-pi, pi]
     phi_r = (phi_r + np.pi) % (2 * np.pi) - np.pi
-    print("current_robot_angle:", current_pose[2])
-    print("phi_r:", phi_r)
+    # print("current_robot_angle:", current_pose[2])
+    # print("phi_r:", phi_r)
     command_rotation = K_omega * phi_r
 
     # Forward command:
