@@ -82,13 +82,13 @@ class TinySlam:
         #   First part: entire line, low probability
 
         for i in range(len(x)):
-            self.grid.add_value_along_line(x0, y0, x[i], y[i], -1)
+            self.grid.add_value_along_line(x0, y0, x[i], y[i], -0.1)
         #   Second part: detected cell, high probability
-        self.grid.add_map_points(x, y, 2)
+        self.grid.add_map_points(x, y, 1)
 
         # Third step
         # Threshold probabilities to avoid divergence
-        np.clip(self.grid.occupancy_map, -40, 40)
+        self.grid.occupancy_map = self.grid.occupancy_map.clip(-40, 40)
 
     def compute(self):
         """Useless function, just for the exercise on using the profiler"""

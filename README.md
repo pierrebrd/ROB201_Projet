@@ -37,3 +37,8 @@ update :j'avais oublié de remttre un angle dans l'intervall -pi pi
 okay la c'est bon ! ça marche bien !
 
 je nai pas fait la partie facultative
+
+# Séance 3 : mappage slam
+
+J'ai eu pleins de problèpe entre la V1 et la V2 à cause de np.clip ! quand on applique la méthode .clip, ça ne modifie pas l'array....
+Il faut faire array = array.clip(min,max)
