@@ -60,7 +60,7 @@ class MyRobotSlam(RobotAbstract):
         # My personal parameters
         self.goal = [-400, -20, 0]
         self.trajectory = np.matrix(np.array([0, 0])).T
-        print(self.trajectory.shape)
+        # print(self.trajectory.shape)
 
     def control(self):
         """
@@ -70,19 +70,21 @@ class MyRobotSlam(RobotAbstract):
         self.trajectory = np.hstack(
             (self.trajectory, np.matrix(self.odometer_values()[:2]).T)
         )
-        print(self.trajectory)
+        # print(self.trajectory)
 
         # Update the lidar map
         self.tiny_slam.update_map(self.lidar(), self.odometer_values())
 
+        command, qobs = self.control_tp2()
+
         if self.counter % 10 == 0:
-            self.tiny_slam.grid.display_plt(
-                self.odometer_values(), self.goal, self.trajectory
+            self.tiny_slam.grid.display_cv(
+                self.odometer_values(), qobs, self.trajectory
             )
             self.counter = 0
         self.counter += 1
 
-        return self.control_tp2()  # We choose wich control function we want to use
+        return command  # We choose wich control function we want to use
 
     def control_tp1(self):
         """
@@ -104,8 +106,8 @@ class MyRobotSlam(RobotAbstract):
         Main control function with full SLAM, random exploration and path planning
         """
         # Compute new command speed to perform obstacle avoidance
-        command = potential_field_control(
+        command, qobs = potential_field_control(
             self.lidar(), self.odometer_values(), self.goal
         )
 
-        return command
+        return command, qobs

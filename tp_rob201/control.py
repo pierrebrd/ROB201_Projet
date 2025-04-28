@@ -70,9 +70,9 @@ def potential_field_control(lidar, current_pose, goal_pose):
 
     # Parameters (TODO: put them in the control_tp2 function)
     K_goal = 2
-    K_obs = -10000
-    K_omega = 0.1
-    K_V = 0.5
+    K_obs = -30000
+    K_omega = 0.3
+    K_V = 0.2
     phi_max = np.pi / 6
     d_seuil = 5
     d_quadratic = 100  # under this distance, we use a quadratic field to slow the robot
@@ -101,13 +101,13 @@ def potential_field_control(lidar, current_pose, goal_pose):
     # We only take the closest obstacle
     laser_dist = lidar.get_sensor_values()
     obs_index, d_q_qobs = np.argmin(laser_dist), np.amin(laser_dist)
+    obs_angle = (obs_index - 180) * np.pi / 180
+    qobs = current_pose[:2] + d_q_qobs * np.array(
+        [np.cos(obs_angle + current_pose[2]), np.sin(obs_angle + current_pose[2])]
+    )
     if d_q_qobs > d_safe:
         repulsion_gradient = np.zeros(2)
     else:
-        obs_angle = (obs_index - 180) * np.pi / 180
-        qobs = current_pose[:2] + d_q_qobs * np.array(
-            [np.cos(obs_angle + current_pose[2]), np.sin(obs_angle + current_pose[2])]
-        )
         repulsion_gradient = (
             (K_obs / (d_q_qobs**3))
             * ((1 / d_q_qobs) - (1 / d_safe))
@@ -140,4 +140,4 @@ def potential_field_control(lidar, current_pose, goal_pose):
         "rotation": np.clip(command_rotation, -1.0, 1.0),
     }
 
-    return command
+    return command, qobs
