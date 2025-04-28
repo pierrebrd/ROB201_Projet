@@ -66,22 +66,28 @@ class MyRobotSlam(RobotAbstract):
         """
         Main control function executed at each time step
         """
-        # Update trajectory
+        if self.counter == 0:
+            self.tiny_slam.update_map(self.lidar(), self.corrected_pose)
+
+        # TP4 : Let's start by correcting the odometry pose
+        best_score = self.tiny_slam.localise(self.lidar(), self.odometer_values())
+        print("best score", best_score)
+        self.corrected_pose = self.tiny_slam.get_corrected_pose(self.odometer_values())
+
+        if best_score > 500:  # TODO : improve the value
+            # Update the lidar map
+            self.tiny_slam.update_map(self.lidar(), self.corrected_pose)
+
+        # Update trajectory # TODO : doesnt work
         self.trajectory = np.hstack(
-            (self.trajectory, np.matrix(self.odometer_values()[:2]).T)
+            (self.trajectory, np.matrix(self.corrected_pose[:2]).T)
         )
         # print(self.trajectory)
-
-        # Update the lidar map
-        self.tiny_slam.update_map(self.lidar(), self.odometer_values())
 
         command, qobs = self.control_tp2()
 
         if self.counter % 10 == 0:
-            self.tiny_slam.grid.display_cv(
-                self.odometer_values(), qobs, self.trajectory
-            )
-            self.counter = 0
+            self.tiny_slam.grid.display_cv(self.corrected_pose, qobs, self.trajectory)
         self.counter += 1
 
         return command  # We choose wich control function we want to use
@@ -107,7 +113,7 @@ class MyRobotSlam(RobotAbstract):
         """
         # Compute new command speed to perform obstacle avoidance
         command, qobs = potential_field_control(
-            self.lidar(), self.odometer_values(), self.goal
+            self.lidar(), self.corrected_pose, self.goal
         )
 
         return command, qobs
