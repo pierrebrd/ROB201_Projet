@@ -46,7 +46,10 @@ Actuellement je crois que le robot va un peu trop vite.
 
 # Séance 4 : Localisation
 
-# Séance 5 : Pas de cours magistral
+# Séance 5 : Planification de trajectoire
+
+D'abord, pas de cours magistral, on continue à travailler sur la séance 4
+
 Objectif : avoir un slam et une localisation complètement fonctionnelle à la fin de la semaine
 
 faire un profiling
@@ -54,3 +57,8 @@ faire un profiling
 si best score trop faible, on fait quand même un update de la map ? le problème que j'ai c'est que au début il y a pas grand chose sur la map car il ya peut d'itérations, et si je fais pas de update map bah le score reste toujours faible et donc c'est une catastripje
 
 résultat du profiling : ce qui prend le plsu de temps c'est le add values along lines....   
+
+le prof a dit que pour best score avec le seuil, il faut genre forcer la mise à jour de la map pour un certain nombre de premières itérations (le temps que la map soit "complète" genre que les valeurs au niveau des murs soient au max, 50 dans notre cas)
+
+l'utilisation de la version CEM n'améliore pas vraiment les choses et augmente le temps de calcul
+Ensuite je commence la "vrai" séance 5 : Planification de trajectoire

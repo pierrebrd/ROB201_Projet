@@ -66,16 +66,16 @@ class MyRobotSlam(RobotAbstract):
         """
         Main control function executed at each time step
         """
-        if self.counter == 0:
-            self.tiny_slam.update_map(self.lidar(), self.corrected_pose)
 
         # TP4 : Let's start by correcting the odometry pose
         best_score = self.tiny_slam.localise(self.lidar(), self.odometer_values())
+        print("counter :", self.counter)
         print("best score", best_score)
         self.corrected_pose = self.tiny_slam.get_corrected_pose(self.odometer_values())
+        print("corrected pose", self.corrected_pose)
 
         # Maybe we should not not update the map if the score is too low, but rather not update the posiiton of the robot/odom (by restoring the old one)
-        if best_score > 500:  # TODO : improve the value
+        if best_score > 500 or self.counter < 10:  # TODO : improve the value
             # Update the lidar map
             self.tiny_slam.update_map(self.lidar(), self.corrected_pose)
 
@@ -89,6 +89,7 @@ class MyRobotSlam(RobotAbstract):
 
         if self.counter % 10 == 0:
             self.tiny_slam.grid.display_cv(self.corrected_pose, qobs, self.trajectory)
+
         self.counter += 1
 
         return command  # We choose wich control function we want to use

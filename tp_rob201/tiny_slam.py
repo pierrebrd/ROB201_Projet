@@ -47,8 +47,6 @@ class TinySlam:
 
         score = np.sum(self.grid.occupancy_map[x_map, y_map])
 
-        # print("score", score)
-
         return score
 
     def get_corrected_pose(self, odom_pose, odom_pose_ref=None):
@@ -85,29 +83,69 @@ class TinySlam:
         # Compute the score for the current self.odom_pose_ref
         best_score = self._score(lidar, self.get_corrected_pose(raw_odom_pose))
 
-        counter_no_improvement = 0
-        while counter_no_improvement < 100:
+        search_method = 0
+
+        if search_method == 0:  # Classic method with random gaussian search
+            counter_no_improvement = 0
+            while counter_no_improvement < 100:
+                sigma_xy = 0.2
+                sigma_theta = 0.02
+                # Generate random offset from a Gaussian distribution
+                offset = np.random.normal(0, [sigma_xy, sigma_xy, sigma_theta])
+                candidate_odom_pose_ref = self.odom_pose_ref + offset
+                # print("offset", offset)
+                # print("candidate_odom_pose_ref", candidate_odom_pose_ref)
+                candidate_corrected_pose = self.get_corrected_pose(
+                    raw_odom_pose, candidate_odom_pose_ref
+                )
+                candidate_score = self._score(lidar, candidate_corrected_pose)
+
+                # Compare with the best score
+                if candidate_score > best_score:
+                    # We update the best score and the odom reference
+                    best_score = candidate_score
+                    self.odom_pose_ref = candidate_odom_pose_ref
+                    # Reset counter
+                    counter_no_improvement = 0
+                else:
+                    counter_no_improvement += 1
+
+        elif search_method == 1:  # Cross Entropy Method (CEM)
+            # Parameters
+            N = 50
+            Ne = 8
+            maxits = 100
+            epsilon = np.array([0.01, 0.01, 0.001])
+
+            # Initial gaussian parameters
+            mean = self.odom_pose_ref
             sigma_xy = 0.2
             sigma_theta = 0.02
-            # Generate random offset from a Gaussian distribution
-            offset = np.random.normal(0, [sigma_xy, sigma_xy, sigma_theta])
-            candidate_odom_pose_ref = self.odom_pose_ref + offset
-            # print("offset", offset)
-            # print("candidate_odom_pose_ref", candidate_odom_pose_ref)
-            candidate_corrected_pose = self.get_corrected_pose(
-                raw_odom_pose, candidate_odom_pose_ref
-            )
-            candidate_score = self._score(lidar, candidate_corrected_pose)
+            std = np.array([sigma_xy, sigma_xy, sigma_theta])
+            it = 0
 
-            # Compare with the best score
-            if candidate_score > best_score:
-                # We update the best score and the odom reference
-                best_score = candidate_score
-                self.odom_pose_ref = candidate_odom_pose_ref
-                # Reset counter
-                counter_no_improvement = 0
-            else:
-                counter_no_improvement += 1
+            while it < maxits and np.any(std > epsilon):
+                # print("Iteration", it)
+                it += 1
+                # Generate N solutions
+                solutions = np.random.normal(mean, std, (N, 3))
+                # Compute the scores and keep the best Ne
+                scores = np.zeros(N)
+                for i in range(N):
+                    scores[i] = self._score(
+                        lidar, self.get_corrected_pose(raw_odom_pose, solutions[i])
+                    )
+                # We only keep the last Ne solutions
+                best_indices = np.argsort(scores)[-Ne:]
+                best_solutions = solutions[best_indices]
+                # Compute the mean and std of the best solutions
+                mean = np.mean(best_solutions, axis=0)
+                std = np.std(best_solutions, axis=0)
+
+            # Update the odom reference
+            self.odom_pose_ref = mean
+            # Compute the best score
+            best_score = self._score(lidar, self.get_corrected_pose(raw_odom_pose))
 
         return best_score
 

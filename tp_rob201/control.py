@@ -73,7 +73,7 @@ def potential_field_control(lidar, current_pose, goal_pose):
     K_obs = -50000
     K_omega = 0.2
     K_V = 0.2
-    phi_max = np.pi / 6
+    phi_max = np.pi / 2
     d_seuil = 5
     d_quadratic = 100  # under this distance, we use a quadratic field to slow the robot
     d_safe = 400
@@ -136,7 +136,7 @@ def potential_field_control(lidar, current_pose, goal_pose):
     else:
         command_forward = K_V * np.linalg.norm(final_gradient) * phi_max / np.abs(phi_r)
     command = {
-        "forward": np.clip(command_forward, -1.0, 1.0),
+        "forward": np.clip(command_forward, -0.7, 0.7),
         "rotation": np.clip(command_rotation, -1.0, 1.0),
     }
 
