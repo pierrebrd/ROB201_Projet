@@ -52,3 +52,5 @@ Objectif : avoir un slam et une localisation complètement fonctionnelle à la f
 faire un profiling
 
 si best score trop faible, on fait quand même un update de la map ? le problème que j'ai c'est que au début il y a pas grand chose sur la map car il ya peut d'itérations, et si je fais pas de update map bah le score reste toujours faible et donc c'est une catastripje
+
+résultat du profiling : ce qui prend le plsu de temps c'est le add values along lines....   

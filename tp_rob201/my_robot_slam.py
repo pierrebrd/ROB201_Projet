@@ -74,6 +74,7 @@ class MyRobotSlam(RobotAbstract):
         print("best score", best_score)
         self.corrected_pose = self.tiny_slam.get_corrected_pose(self.odometer_values())
 
+        # Maybe we should not not update the map if the score is too low, but rather not update the posiiton of the robot/odom (by restoring the old one)
         if best_score > 500:  # TODO : improve the value
             # Update the lidar map
             self.tiny_slam.update_map(self.lidar(), self.corrected_pose)
