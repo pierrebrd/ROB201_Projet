@@ -87,8 +87,8 @@ class TinySlam:
 
         counter_no_improvement = 0
         while counter_no_improvement < 100:
-            sigma_xy = 0.05
-            sigma_theta = 0.005
+            sigma_xy = 0.2
+            sigma_theta = 0.02
             # Generate random offset from a Gaussian distribution
             offset = np.random.normal(0, [sigma_xy, sigma_xy, sigma_theta])
             candidate_odom_pose_ref = self.odom_pose_ref + offset

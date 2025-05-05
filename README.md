@@ -43,3 +43,12 @@ je nai pas fait la partie facultative
 J'ai eu pleins de problèpe entre la V1 et la V2 à cause de np.clip ! quand on applique la méthode .clip, ça ne modifie pas l'array....
 Il faut faire array = array.clip(min,max)
 Actuellement je crois que le robot va un peu trop vite.
+
+# Séance 4 : Localisation
+
+# Séance 5 : Pas de cours magistral
+Objectif : avoir un slam et une localisation complètement fonctionnelle à la fin de la semaine
+
+faire un profiling
+
+si best score trop faible, on fait quand même un update de la map ? le problème que j'ai c'est que au début il y a pas grand chose sur la map car il ya peut d'itérations, et si je fais pas de update map bah le score reste toujours faible et donc c'est une catastripje

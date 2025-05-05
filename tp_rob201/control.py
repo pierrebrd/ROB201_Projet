@@ -70,13 +70,13 @@ def potential_field_control(lidar, current_pose, goal_pose):
 
     # Parameters (TODO: put them in the control_tp2 function)
     K_goal = 2
-    K_obs = -30000
+    K_obs = -50000
     K_omega = 0.2
     K_V = 0.2
     phi_max = np.pi / 6
     d_seuil = 5
     d_quadratic = 100  # under this distance, we use a quadratic field to slow the robot
-    d_safe = 100
+    d_safe = 400
 
     d_q_qgoal = np.sqrt(
         (current_pose[0] - goal_pose[0]) ** 2 + (current_pose[1] - goal_pose[1]) ** 2
