@@ -46,7 +46,7 @@ Actuellement je crois que le robot va un peu trop vite.
 
 # Séance 4 : Localisation
 
-# Séance 5 : Planification de trajectoire
+
 
 D'abord, pas de cours magistral, on continue à travailler sur la séance 4
 
@@ -62,3 +62,5 @@ le prof a dit que pour best score avec le seuil, il faut genre forcer la mise à
 
 l'utilisation de la version CEM n'améliore pas vraiment les choses et augmente le temps de calcul
 Ensuite je commence la "vrai" séance 5 : Planification de trajectoire
+
+# Séance 5 : Planification de trajectoire

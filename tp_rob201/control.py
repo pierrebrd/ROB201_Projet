@@ -57,7 +57,7 @@ def reactive_obst_avoid(lidar, counter):
     return command, new_counter
 
 
-def potential_field_control(lidar, current_pose, goal_pose):
+def potential_field_control(lidar, current_pose, goal_pose, navigation_mode=0):
     """
     Control using potential field for goal reaching and obstacle avoidance
     lidar : placebot object with lidar data
@@ -69,14 +69,29 @@ def potential_field_control(lidar, current_pose, goal_pose):
     """
 
     # Parameters (TODO: put them in the control_tp2 function)
-    K_goal = 2
-    K_obs = -50000
-    K_omega = 0.2
-    K_V = 0.2
-    phi_max = np.pi / 2
-    d_seuil = 5
-    d_quadratic = 100  # under this distance, we use a quadratic field to slow the robot
-    d_safe = 400
+    if navigation_mode == 0:
+        K_goal = 2
+        K_obs = -50000
+        K_omega = 0.2
+        K_V = 0.2
+        phi_max = np.pi / 2
+        d_seuil = 5
+        d_quadratic = (
+            100  # under this distance, we use a quadratic field to slow the robot
+        )
+        d_safe = 400
+    else:
+        # navigation_mode = 1 : following path
+        K_goal = 2
+        K_obs = -5000
+        K_omega = 0.2
+        K_V = 0.2
+        phi_max = np.pi / 2
+        d_seuil = 10
+        d_quadratic = (
+            100  # under this distance, we use a quadratic field to slow the robot
+        )
+        d_safe = 400
 
     d_q_qgoal = np.sqrt(
         (current_pose[0] - goal_pose[0]) ** 2 + (current_pose[1] - goal_pose[1]) ** 2
@@ -84,7 +99,7 @@ def potential_field_control(lidar, current_pose, goal_pose):
 
     if d_q_qgoal < d_seuil:
         # We stop moving, we're close enough from the goal
-        return {"forward": 0, "rotation": 0}
+        return None, None
 
     # Gradient in the odom frame
     if d_q_qgoal > d_quadratic:

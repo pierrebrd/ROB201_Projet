@@ -59,8 +59,17 @@ class MyRobotSlam(RobotAbstract):
 
         # My personal parameters
         self.goal = [-400, -20, 0]
-        self.trajectory = np.matrix(np.array([0, 0])).T
+        self.trajectory = np.array([0, 0])
         # print(self.trajectory.shape)
+
+        # TP5 : new parameters
+        # 0 : explore to the goal using potential field
+        # 1 : go back to initial position using A*
+        self.navigation_mode = 0
+        self.planned_path = None
+        self.planned_path_map = None
+        self.path_increment = 20
+        self.current_path_objective_index = self.path_increment
 
     def control(self):
         """
@@ -69,26 +78,62 @@ class MyRobotSlam(RobotAbstract):
 
         # TP4 : Let's start by correcting the odometry pose
         best_score = self.tiny_slam.localise(self.lidar(), self.odometer_values())
-        print("counter :", self.counter)
+        # print("counter :", self.counter)
         print("best score", best_score)
         self.corrected_pose = self.tiny_slam.get_corrected_pose(self.odometer_values())
-        print("corrected pose", self.corrected_pose)
+        # print("corrected pose", self.corrected_pose)
 
         # Maybe we should not not update the map if the score is too low, but rather not update the posiiton of the robot/odom (by restoring the old one)
-        if best_score > 500 or self.counter < 10:  # TODO : improve the value
+        if best_score > 3000 or self.counter < 40:  # TODO : improve the value
             # Update the lidar map
             self.tiny_slam.update_map(self.lidar(), self.corrected_pose)
 
         # Update trajectory # TODO : doesnt work
-        self.trajectory = np.hstack(
-            (self.trajectory, np.matrix(self.corrected_pose[:2]).T)
-        )
+        self.trajectory = np.vstack((self.trajectory, self.corrected_pose[:2]))
         # print(self.trajectory)
 
-        command, qobs = self.control_tp2()
+        if self.navigation_mode == 0:
+            # Potential field control until we reach the goal
+            command, qobs = self.control_tp2()
+            if command == None:
+                # We have arrived to the goal
+                self.navigation_mode = 1  # Switch the mode
+                self.planned_path = np.array(
+                    self.planner.plan(self.corrected_pose, np.array([0, 0, 0]))
+                )
+                command = {"forward": 0, "rotation": 0}
+            if self.counter % 10 == 0:
+                self.tiny_slam.grid.display_cv(
+                    self.corrected_pose, self.goal, self.trajectory
+                )
 
-        if self.counter % 10 == 0:
-            self.tiny_slam.grid.display_cv(self.corrected_pose, qobs, self.trajectory)
+        # TP5 : we use the A* algorithm
+        elif self.navigation_mode == 1:
+            # We go back to the initial point
+            command, qobs = potential_field_control(
+                self.lidar(),
+                self.corrected_pose,
+                self.planned_path[self.current_path_objective_index],
+                self.navigation_mode,
+            )
+            while (
+                command == None
+                and self.current_path_objective_index < len(self.planned_path) - 1
+            ):
+                # We reached the intermediate objective
+                self.current_path_objective_index += self.path_increment
+                command, qobs = potential_field_control(
+                    self.lidar(),
+                    self.corrected_pose,
+                    self.planned_path[self.current_path_objective_index],
+                    self.navigation_mode,
+                )
+            if self.counter % 10 == 0:
+                self.tiny_slam.grid.display_cv(
+                    self.corrected_pose,
+                    self.planned_path[self.current_path_objective_index],
+                    self.planned_path,
+                )
 
         self.counter += 1
 
@@ -114,8 +159,8 @@ class MyRobotSlam(RobotAbstract):
         Main control function with full SLAM, random exploration and path planning
         """
         # Compute new command speed to perform obstacle avoidance
-        command, qobs = potential_field_control(
-            self.lidar(), self.corrected_pose, self.goal
+        result = potential_field_control(
+            self.lidar(), self.corrected_pose, self.goal, self.navigation_mode
         )
 
-        return command, qobs
+        return result
