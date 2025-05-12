@@ -83,7 +83,7 @@ def potential_field_control(lidar, current_pose, goal_pose, navigation_mode=0):
     else:
         # navigation_mode = 1 : following path
         K_goal = 2
-        K_obs = -5000
+        K_obs = -1000
         K_omega = 0.2
         K_V = 0.2
         phi_max = np.pi / 2

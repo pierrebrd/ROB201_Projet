@@ -58,6 +58,9 @@ class Planner:
         goal : [x, y, theta] nparray, goal pose in world coordinates (theta unused)
         The path is returned in world coordinates
         """
+        larger_grid = np.copy(self.grid.occupancy_map)
+        obstacles_increment = 10
+        # TODO : max search
 
         # First, we convert the start and goal to map coordinates
         start_cell = self.grid.conv_world_to_map(start[0], start[1])
