@@ -48,7 +48,6 @@ class Planner:
         """
         Returns the heuristic distance between two cells. The heuristic is the Euclidean distance
         """
-        # TODO Maybe we can remove the sqrt to speed up the algorithm ?
         return np.sqrt((cell_1[0] - cell_2[0]) ** 2 + (cell_1[1] - cell_2[1]) ** 2)
 
     def plan(self, start, goal):
@@ -58,9 +57,22 @@ class Planner:
         goal : [x, y, theta] nparray, goal pose in world coordinates (theta unused)
         The path is returned in world coordinates
         """
-        larger_grid = np.copy(self.grid.occupancy_map)
+
+        # We start by creating a copy of the map with bigger obstacles
         obstacles_increment = 10
-        # TODO : max search
+        padded_map = np.pad(
+            self.grid.occupancy_map, pad_width=obstacles_increment, constant_values=0
+        )
+        big_obstacles_map = np.zeros_like(self.grid.occupancy_map)
+        print("max x: ", self.grid.x_max_map)
+        for x in range(self.grid.x_max_map):
+            print("x", x)
+            for y in range(self.grid.y_max_map):
+                window = padded_map[
+                    x : x + 2 * obstacles_increment + 1,
+                    y : y + 2 * obstacles_increment + 1,
+                ]
+                big_obstacles_map[x, y] = np.max(window)
 
         # First, we convert the start and goal to map coordinates
         start_cell = self.grid.conv_world_to_map(start[0], start[1])
@@ -71,7 +83,7 @@ class Planner:
         queue = [
             (self.heuristic(start_cell, goal_cell), 0, start_cell, [start_cell])
         ]  # list of cells to explore
-        heapq.heapify(queue)  # Do not know if this is needed
+        heapq.heapify(queue)  # Don't know if this is needed
         visited = set()
 
         while queue != []:
@@ -91,7 +103,7 @@ class Planner:
             for neighbor, move_cost in self.get_neighbors(current_cell):
                 if (
                     neighbor in visited
-                    or self.grid.occupancy_map[neighbor[0], neighbor[1]] > 0
+                    or big_obstacles_map[neighbor[0], neighbor[1]] > 0
                 ):
                     continue
                 new_cost = cost_so_far + move_cost
@@ -99,11 +111,7 @@ class Planner:
                 heapq.heappush(
                     queue, (estimated_total_cost, new_cost, neighbor, path + [neighbor])
                 )
-
-        return None  # No path found
-
-        path = [start, goal]  # list of poses
-        return path
+        return None  # No path found if we reach here
 
     def explore_frontiers(self):
         """Frontier based exploration"""

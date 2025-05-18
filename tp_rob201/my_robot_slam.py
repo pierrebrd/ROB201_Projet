@@ -14,6 +14,7 @@ from tiny_slam import TinySlam
 from control import (
     potential_field_control,
     reactive_obst_avoid,
+    get_goal_on_path,
 )  # We import the control functions we need
 from occupancy_grid import OccupancyGrid
 from planner import Planner
@@ -60,7 +61,6 @@ class MyRobotSlam(RobotAbstract):
         # My personal parameters
         self.goal = [-400, -20, 0]
         self.trajectory = np.array([0, 0])
-        # print(self.trajectory.shape)
 
         # TP5 : new parameters
         # 0 : explore to the goal using potential field
@@ -68,8 +68,7 @@ class MyRobotSlam(RobotAbstract):
         self.navigation_mode = 0
         self.planned_path = None
         self.planned_path_map = None
-        self.path_increment = 20
-        self.current_path_objective_index = self.path_increment
+        self.current_path_goal_index = 0
 
     def control(self):
         """
@@ -78,19 +77,16 @@ class MyRobotSlam(RobotAbstract):
 
         # TP4 : Let's start by correcting the odometry pose
         best_score = self.tiny_slam.localise(self.lidar(), self.odometer_values())
-        # print("counter :", self.counter)
         print("best score", best_score)
         self.corrected_pose = self.tiny_slam.get_corrected_pose(self.odometer_values())
-        # print("corrected pose", self.corrected_pose)
 
         # Maybe we should not not update the map if the score is too low, but rather not update the posiiton of the robot/odom (by restoring the old one)
-        if best_score > 3000 or self.counter < 40:  # TODO : improve the value
+        if best_score > 2000 or self.counter < 40:
             # Update the lidar map
             self.tiny_slam.update_map(self.lidar(), self.corrected_pose)
 
-        # Update trajectory # TODO : doesnt work
+        # Update the trajectory
         self.trajectory = np.vstack((self.trajectory, self.corrected_pose[:2]))
-        # print(self.trajectory)
 
         if self.navigation_mode == 0:
             # Potential field control until we reach the goal
@@ -107,31 +103,31 @@ class MyRobotSlam(RobotAbstract):
                     self.corrected_pose, self.goal, self.trajectory
                 )
 
-        # TP5 : we use the A* algorithm
+        # TP5 : we use the A* algorithm to go back to the initial position
         elif self.navigation_mode == 1:
-            # We go back to the initial point
+
+            # The idea is to dynamically update the goal so that it is always at a predefined
+            # distance from the robot. If the robot is too slow to reach the goal, we choose a closer
+            # goal to help unstuck the robot
+
+            self.current_path_goal_index = get_goal_on_path(
+                self.corrected_pose,
+                self.current_path_goal_index,
+                self.planned_path,
+                20,
+            )
+
             command, qobs = potential_field_control(
                 self.lidar(),
                 self.corrected_pose,
-                self.planned_path[self.current_path_objective_index],
+                self.planned_path[self.current_path_goal_index],
                 self.navigation_mode,
             )
-            while (
-                command == None
-                and self.current_path_objective_index < len(self.planned_path) - 1
-            ):
-                # We reached the intermediate objective
-                self.current_path_objective_index += self.path_increment
-                command, qobs = potential_field_control(
-                    self.lidar(),
-                    self.corrected_pose,
-                    self.planned_path[self.current_path_objective_index],
-                    self.navigation_mode,
-                )
+
             if self.counter % 10 == 0:
                 self.tiny_slam.grid.display_cv(
                     self.corrected_pose,
-                    self.planned_path[self.current_path_objective_index],
+                    self.planned_path[self.current_path_goal_index],
                     self.planned_path,
                 )
 
@@ -144,7 +140,6 @@ class MyRobotSlam(RobotAbstract):
         Control function for TP1
         Control funtion with minimal random motion
         """
-        # self.tiny_slam.compute()  # TODO : enlever ?
 
         # Compute new command speed to perform obstacle avoidance
         command, new_counter = reactive_obst_avoid(

@@ -9,7 +9,7 @@ def reactive_obst_avoid(lidar, counter):
     Simple obstacle avoidance
     lidar : placebot object with lidar data
     """
-    # TODO for TP1
+    # TP1
 
     laser_dist = lidar.get_sensor_values()  # get the lidar data
     new_counter = counter  # initialize new_counter with the current counter value
@@ -68,30 +68,31 @@ def potential_field_control(lidar, current_pose, goal_pose, navigation_mode=0):
     on initial pose, x forward, y on left)
     """
 
-    # Parameters (TODO: put them in the control_tp2 function)
+    # Parameters
     if navigation_mode == 0:
-        K_goal = 2
+        # going to a goal using potential field during exploration
+        K_goal = 3
         K_obs = -50000
-        K_omega = 0.2
-        K_V = 0.2
+        K_omega = 0.4
+        K_V = 0.1
         phi_max = np.pi / 2
         d_seuil = 5
         d_quadratic = (
             100  # under this distance, we use a quadratic field to slow the robot
         )
-        d_safe = 400
+        d_safe = 1000
     else:
         # navigation_mode = 1 : following path
-        K_goal = 2
+        K_goal = 3
         K_obs = -1000
-        K_omega = 0.2
+        K_omega = 0.4
         K_V = 0.2
-        phi_max = np.pi / 2
+        phi_max = np.pi / 12
         d_seuil = 10
         d_quadratic = (
-            100  # under this distance, we use a quadratic field to slow the robot
+            50  # under this distance, we use a quadratic field to slow the robot
         )
-        d_safe = 400
+        d_safe = 500
 
     d_q_qgoal = np.sqrt(
         (current_pose[0] - goal_pose[0]) ** 2 + (current_pose[1] - goal_pose[1]) ** 2
@@ -129,20 +130,14 @@ def potential_field_control(lidar, current_pose, goal_pose, navigation_mode=0):
             * (qobs - current_pose[:2])
         )
 
-    # print(f"attraction:{attraction_gradient}, repulsion:{repulsion_gradient}")
-
     final_gradient = attraction_gradient + repulsion_gradient
     # Now we create the command
 
     # Angle between the gradient and the current direction:
     gradient_angle = np.arctan2(final_gradient[1], final_gradient[0])
-    # print(f"final gradient: {final_gradient}")
-    # print(f"gradient angle: {gradient_angle}")
     phi_r = gradient_angle - current_pose[2]
     # Ensure the angle is in [-pi, pi]
     phi_r = (phi_r + np.pi) % (2 * np.pi) - np.pi
-    # print("current_robot_angle:", current_pose[2])
-    # print("phi_r:", phi_r)
     command_rotation = K_omega * phi_r
 
     # Forward command:
@@ -151,8 +146,27 @@ def potential_field_control(lidar, current_pose, goal_pose, navigation_mode=0):
     else:
         command_forward = K_V * np.linalg.norm(final_gradient) * phi_max / np.abs(phi_r)
     command = {
-        "forward": np.clip(command_forward, -0.7, 0.7),
+        "forward": np.clip(command_forward, -0.6, 0.6),
         "rotation": np.clip(command_rotation, -1.0, 1.0),
     }
-
     return command, qobs
+
+
+def get_goal_on_path(current_pose, current_index, path, goal_distance):
+    """
+    Return the next goal on the path, at a distance goal_distance from the current pose.
+    the function returns the index of the next goal.
+    current_pose : [x, y, theta] nparray, current pose in odom or world frame
+    current_index : int, index of the current goal in the path
+    path : nparray of shape (N, 2), path in world coordinates
+    goal_distance : distance to the next goal
+    """
+    x, y = current_pose[:2]
+    goal_distance = goal_distance**2
+    for i in range(current_index, len(path)):
+        distance = (x - path[i, 0]) ** 2 + (y - path[i, 1]) ** 2
+        if distance > goal_distance:
+            # We have found the next goal
+            return i
+    # We have not found the next goal, we return the last index
+    return len(path) - 1
